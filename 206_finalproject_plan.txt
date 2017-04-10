@@ -156,3 +156,6 @@ dictionary sorting, list comprehension
 
 * What will your output look like? Will it be a .txt file? a CSV file? something else? What information will it contain? >>>This is especially important if you are doing Option 3, but it's important for everyone!<<<
 
+A .txt file because the data will be written to text file as a "summary stats" page. 
+
+

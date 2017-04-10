@@ -20,8 +20,28 @@ import sqlite3
 #Write function(s) to get and cache data from the OMDB API with a movie title search
 
 #define a class Movie.
-#The constructor for class Movie accepts a dictionary called movie_dict
-#some of the instance variables are movie_title, IMDB_rating, and movie_director
+	#The constructor for class Movie accepts a dictionary called movie_dict
+	#some of the instance variables are movie_title, IMDB_rating, and movie_director
+
+#create a class or classes to handle the Twitter data and make it easier for you
+
+#Pick at least 3 movie title search terms for OMDB. Put those strings in a list. 
+
+#Make a request to OMDB on each of those 3 search terms
+
+#create a list of instances of class Movie.
+
+#Make invocations to your Twitter functions. 
+
+#Create a database file with 3 tables:
+
+#Load data into your database!
+
+
+#Process the data and create an output file!
+
+
+
 
 # Write your test cases here.
 class CachingTests(unittest.TestCase):
