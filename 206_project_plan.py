@@ -15,6 +15,13 @@ import twitter_info # same deal as always...
 import json
 import sqlite3
 
+#Write function(s) to get and cache data from Twitter
+
+#Write function(s) to get and cache data from the OMDB API with a movie title search
+
+#define a class Movie.
+#The constructor for class Movie accepts a dictionary called movie_dict
+#some of the instance variables are movie_title, IMDB_rating, and movie_director
 
 # Write your test cases here.
 class CachingTests(unittest.TestCase):
