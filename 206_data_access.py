@@ -57,7 +57,7 @@ try:
 except:
 	CACHE_DICTION = {}
 
-#A function to get and cache data based on a search term
+#Write a function to get and cache data from Twitter based on a search term
 def get_movie_tweets(movie):
 	unique_identifier = "twitter_{}".format(movie)
 	if unique_identifier in CACHE_DICTION:
@@ -73,7 +73,7 @@ def get_movie_tweets(movie):
 		movie_tweets.append(tweet)
 	return movie_tweets
 
-#Write function(s) to get and cache data from the OMDB API with a movie title search
+#Write a function to get and cache data from the OMDB API with a movie title search
 def get_OMDB_API_data(title):
 	base_url = "http://www.omdbapi.com/?"
 	unique_identifier = "omdb_{}".format(title)
@@ -136,31 +136,28 @@ Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan"
 #list of the 5 movies that are searched for on the IMDB
 Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal"]
 
-# Make a list of 5 dictionaries of movie data
-Movie_data = []
-for s in Movie_list:
-	Movie_data.append(get_OMDB_API_data(s))
-# Make a list of 5 dictionaries of tweet data
-
-# Make a list of 5 movie instances
-Movie_data_instances = []
-for s in Movie_data:
-	Movie_data_instances.append(Movie(s))
-
-# Make a list of 5 dictionaries of tweet
+# Invoking function get_movie_tweets on 5 hashtagged movies and then making a list of dictionaries of the data for each tweet
 Movie_tweets = []
 for s in Tweeted_movies: 
 	Movie_tweets.append(get_movie_tweets(s))
 
-# Make a list of 5 tweet instances
+# Make a list of tweet instances for the 5 tweeted movies
 Movie_tweet_instances = []
 for i in range(len(Movie_tweets)):
 	for s in Movie_tweets[i]:
 		Movie_tweet_instances.append(Tweet(s, Movie_list[i]))
 
-# La_La_Land_tweets = get_movie_tweets("#LaLaLand")
-# La_La_Land_data = get_OMDB_API_data("La La Land")
-# #print(La_La_Land_data)
+# Invoking function get_OMDB_data on 5 movies and then making a list of dictionaries of the data for each movie
+Movie_data = []
+for s in Movie_list:
+	Movie_data.append(get_OMDB_API_data(s))
+
+
+# Make a list of movie instances for the 5 movies
+Movie_data_instances = []
+for s in Movie_data:
+	Movie_data_instances.append(Movie(s))
+
 
 #Create a database file with 3 tables:
 conn = sqlite3.connect('finalproject_tweets.db')
@@ -212,7 +209,7 @@ for s in Movie_data_instances:
 
 conn.commit()
 
-#set comprehension, list comprehension, dictionary comprehension, dictionary accumulation
+#4 types of processing mechanisms: set comprehension, list comprehension, dictionary comprehension, dictionary accumulation
 
 #make a query to select all of the screennames of the users who have favorited more than 30,000 tweets. 
 
@@ -274,8 +271,26 @@ class RegularTest(unittest.TestCase):
 		value = Tweet(tweet_list[0], "La La Land")
 		self.assertEqual(value.movie_search, "La La Land")
 
+	def test8(self):
+		tweet_list = get_movie_tweets("#BeautyandtheBeast")
+		value = Tweet(tweet_list[0], "Beauty and the Beast")
+		self.assertEqual(type(value.num_favs), int)
 
+	def test9(self):
+		tweet_list = get_movie_tweets("#Logan")
+		self.assertEqual(type(tweet_list), list)
 
+	def test91(self):
+		tweets = get_movie_tweets("#Logan")
+		self.assertEqual(type(tweets[3]),type({"#logan":10}))
+
+	def test92(self):
+		movie_data = get_OMDB_API_data("Logan")
+		self.assertEqual(type(movie_data),type({}))
+
+	def test93(self):
+		movie_info = get_OMDB_API_data("The Blind Side")
+		self.assertEqual(type(movie_info["Title"]), str)
 
 
 ## Remember to invoke all your tests...
