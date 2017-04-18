@@ -34,7 +34,6 @@ import sqlite3
 
 # Begin filling in instructions....
 
-
 #Write function(s) to get and cache data from Twitter
 
 consumer_key = twitter_info.consumer_key
@@ -73,30 +72,6 @@ def get_movie_tweets(movie):
 	for tweet in twitter_results["statuses"]:
 		movie_tweets.append(tweet)
 	return movie_tweets
-#print(get_movie_tweets("#LaLaLand"))
-
-#A function to get and cache data about a Twitter user
-# def get_user_tweets(username):
-# 	unique_identifier = "twitter_{}".format(username) # seestring formatting chapter
-# 	# see if that username+twitter is in the cache diction!
-# 	if unique_identifier in CACHE_DICTION: # if it is...
-# 		print('using cached data for', username)
-# 		twitter_results = CACHE_DICTION[unique_identifier] # grab the data from the cache!
-# 	else:
-# 		print('getting data from internet for', username)
-# 		twitter_results = api.user_timeline(username) # get it from the internet
-# 		# but also, save in the dictionary to cache it!
-# 		CACHE_DICTION[unique_identifier] = twitter_results # add it to the dictionary -- new key-val pair
-# 		# and then write the whole cache dictionary, now with new info added, to the file, so it'll be there even after your program closes!
-# 		f = open(CACHE_FNAME,'w') # open the cache file for writing
-# 		f.write(json.dumps(CACHE_DICTION)) # make the whole dictionary holding data and unique identifiers into a json-formatted string, and write that wholllle string to a file so you'll have it next time!
-# 		f.close()
-# 	tweeter = [] # collect 'em all!
-# 	for tweet in twitter_results:
-# 		tweeter.append(tweet)
-# 	return tweeter
-# #print(get_user_tweets('UMSI'))
-
 
 #Write function(s) to get and cache data from the OMDB API with a movie title search
 def get_OMDB_API_data(title):
@@ -116,46 +91,78 @@ def get_OMDB_API_data(title):
 		f.close() 
 	return movie_dict
 
-
-#define a class Movie.
-	#The constructor for class Movie accepts a dictionary called movie_dict
-	#some of the instance variables are movie_title, IMDB_rating, and movie_director
-class Movie(object):
+#define a class Movie to handle the Movie data 
+class Movie():
 	def __init__(self, movie_dict):
+		self.movie_dict = movie_dict
+		self.movie_id = movie_dict["imdbID"]
 		self.movie_title = movie_dict["Title"]
 		self.movie_director = movie_dict["Director"]
 		self.IMDB_rating = movie_dict["imdbRating"]
 		self.languages = movie_dict["Language"]
+		self.actors = movie_dict["Actors"]
 
-	def actors(self, movie_dict):
-		actor_string = movie_dict["Actors"]
-		self.actors = actor_string.split(', ')
-		return self.actors
+	#Movie class method that returns the actors in a list
+	def get_actors_list(self):
+		actor_string = self.actors
+		self.actors_list = actor_string.split(', ')
+		return self.actors_list
 
+	#Movie class method that returns a string of all of the information about the movie
 	def __str__(self):
 		return "{} by {} is rated {} on imdb, the language is {}, and the actors are {}".format(self.movie_title, self.movie_director, self.IMDB_rating, self.languages, self.actors)
 
-value = Movie(get_OMDB_API_data("Finding Nemo"))
-value1 = value.__str__()
-print(value)
-
 #create a class or classes to handle the Twitter data and make it easier for you
+class Tweet():
+	def __init__(self, movie_tweet, movie):
+		self.movie_tweet = movie_tweet
+		self.tweet_id = movie_tweet["id_str"]
+		self.tweet_text = movie_tweet["text"]  
+		self.user_id = movie_tweet["user"]["id_str"]
+		self.movie_search = movie
+		self.num_favs = movie_tweet["favorite_count"]
+		self.num_user_favs = movie_tweet["user"]["favourites_count"]
+		self.retweets = movie_tweet["retweet_count"]
+		self.screenname = movie_tweet["user"]["screen_name"]
+		self.user_mentions = movie_tweet['entities']['user_mentions']
 
-#Pick at least 3 movie title search terms for OMDB. Put those strings in a list. 
+	#Tweet class method that returns a string of all of the information about the tweet
+	def __str__(self):
+		return "{} is the tweet that says {} and was posted by {} because the movie {} was searched and has gotten {} favoroites and {} retweets".format(self.tweet_id, self.tweet_text, self.user_id, self.movie_search, self.num_favs, self.retweets)
 
-#Make a request to OMDB on each of those 3 search terms
+#list of the 5 hashtagged movies that are searched on Twitter
+Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan", "Colossal"]
 
-#create a list of instances of class Movie.
+#list of the 5 movies that are searched for on the IMDB
+Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal"]
 
-#Make invocations to your Twitter functions. 
+# Make a list of 5 dictionaries of movie data
+Movie_data = []
+for s in Movie_list:
+	Movie_data.append(get_OMDB_API_data(s))
+# Make a list of 5 dictionaries of tweet data
 
-La_La_Land_tweets = get_movie_tweets("#LaLaLand")
-La_La_Land_data = get_OMDB_API_data("La La Land")
-#print(La_La_Land_data)
-my_movie = Movie(La_La_Land_data)
+# Make a list of 5 movie instances
+Movie_data_instances = []
+for s in Movie_data:
+	Movie_data_instances.append(Movie(s))
+
+# Make a list of 5 dictionaries of tweet
+Movie_tweets = []
+for s in Tweeted_movies: 
+	Movie_tweets.append(get_movie_tweets(s))
+
+# Make a list of 5 tweet instances
+Movie_tweet_instances = []
+for i in range(len(Movie_tweets)):
+	for s in Movie_tweets[i]:
+		Movie_tweet_instances.append(Tweet(s, Movie_list[i]))
+
+# La_La_Land_tweets = get_movie_tweets("#LaLaLand")
+# La_La_Land_data = get_OMDB_API_data("La La Land")
+# #print(La_La_Land_data)
 
 #Create a database file with 3 tables:
-
 conn = sqlite3.connect('finalproject_tweets.db')
 cur = conn.cursor()
 
@@ -176,14 +183,17 @@ cur.execute(table_spec)
 
 #Load data into your database!
 
-for s in La_La_Land_tweets:
-	cur.execute('INSERT OR IGNORE INTO Tweets (tweet_id, tweet_text, user_id, movie_search, num_favs, retweets) VALUES (?, ?, ?, ?, ?, ?)', (s["id_str"], s["text"], s["user"]["id_str"], "#LaLaLand", s["user"]["favourites_count"], s["retweet_count"]))
+#iterate through the tweet instances and loads the data about each tweet into the database
+for s in Movie_tweet_instances:
+	cur.execute('INSERT OR IGNORE INTO Tweets (tweet_id, tweet_text, user_id, movie_search, num_favs, retweets) VALUES (?, ?, ?, ?, ?, ?)', (s.tweet_id, s.tweet_text, s.user_id, s.movie_search, s.num_favs, s.retweets))
 
-for s in La_La_Land_tweets:
-	cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs) VALUES (?, ?, ?)', (s["user"]["id_str"], s["user"]["screen_name"], s["user"]["favourites_count"]))
+#iterate through the tweet instances and loads the data about each user into the database
+for s in Movie_tweet_instances :
+	cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs) VALUES (?, ?, ?)', (s.user_id, s.screenname, s.num_user_favs))
 
-for s in La_La_Land_tweets:
-	for u in s['entities']['user_mentions']:
+#iterate through the tweet instances and loads the data about each user mentioned into the database
+for s in Movie_tweet_instances:
+	for u in s.user_mentions:
 		unique_identifier = "user_{}".format(u['screen_name'])
 		if unique_identifier in CACHE_DICTION:
 			my_var = CACHE_DICTION[unique_identifier]
@@ -195,21 +205,22 @@ for s in La_La_Land_tweets:
 			f.close()
 		cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs) VALUES (?, ?, ?)', (my_var["id_str"], my_var["screen_name"], my_var["favourites_count"]))
 
-actors_list = my_movie.actors(La_La_Land_data)
-cur.execute('INSERT OR IGNORE INTO Movies (movie_id, movie_title, movie_director, languages, IMDB_rating, first_actor) VALUES (?, ?, ?, ?, ?, ?)', (La_La_Land_data["imdbID"], my_movie.movie_title, my_movie.movie_director, my_movie.languages, my_movie.IMDB_rating, actors_list[0]))
+#iterate through the movie instances and loads the data about each movie into the database
+for s in Movie_data_instances:
+	actors_list = s.get_actors_list()
+	cur.execute('INSERT OR IGNORE INTO Movies (movie_id, movie_title, movie_director, languages, IMDB_rating, first_actor) VALUES (?, ?, ?, ?, ?, ?)', (s.movie_id, s.movie_title, s.movie_director, s.languages, s.IMDB_rating, actors_list[0]))
 
 conn.commit()
 
-#set comprehension
+#set comprehension, list comprehension, dictionary comprehension, dictionary accumulation
 
-#list comprehension
+#make a query to select all of the screennames of the users who have favorited more than 30,000 tweets. 
 
-#dictionary comprehension
+#make a query to select the movie search from the Tweets associated with those users who favorites more than 30,000 tweets. 
 
-#dictionary accumulation
+#make a query to select the IMDB_rating from the Movies associated with those movies (movie_search = movie_title). 
 
-
-
+#print IMDB_ratings and movies and screennames to see the ratings of the movies that were tweeted by users with over 30,000 favorites.
 
 #TO CLOSE YOUR DATABASE CONNECTION 
 conn.close()
@@ -246,7 +257,7 @@ class RegularTest(unittest.TestCase):
 	def test4(self):
 			movie = get_OMDB_API_data("Superbad")
 			value = Movie(movie)
-			self.assertEqual(type(value.actors(movie)), list)	
+			self.assertEqual(type(value.get_actors_list()), list)	
 
 	def test5(self):
 			my_movie = get_OMDB_API_data("Beauty and the Beast")
@@ -257,6 +268,13 @@ class RegularTest(unittest.TestCase):
 			movie_dict = get_OMDB_API_data("La La Land")
 			value = Movie(movie_dict)
 			self.assertEqual(value.movie_director, "Damien Chazelle")
+
+	def test7(self):
+		tweet_list = get_movie_tweets("#LaLaLand")
+		value = Tweet(tweet_list[0], "La La Land")
+		self.assertEqual(value.movie_search, "La La Land")
+
+
 
 
 
