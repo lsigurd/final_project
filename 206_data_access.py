@@ -152,12 +152,10 @@ Movie_data = []
 for s in Movie_list:
 	Movie_data.append(get_OMDB_API_data(s))
 
-
 # Make a list of movie instances for the 5 movies
 Movie_data_instances = []
 for s in Movie_data:
 	Movie_data_instances.append(Movie(s))
-
 
 #Create a database file with 3 tables:
 conn = sqlite3.connect('finalproject_tweets.db')
