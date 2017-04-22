@@ -46,7 +46,6 @@ auth.set_access_token(access_token, access_token_secret)
 # Set up library to grab stuff from twitter with your authentication, and return it in a JSON format 
 api = tweepy.API(auth, parser=tweepy.parsers.JSONParser())
 
-
 CACHE_FNAME = "SI206_finalproject_cache.json"
 # Put the rest of your caching setup here:
 try:
@@ -101,6 +100,7 @@ class Movie():
 		self.IMDB_rating = movie_dict["imdbRating"]
 		self.languages = movie_dict["Language"]
 		self.actors = movie_dict["Actors"]
+		self.awards = movie_dict["Awards"]
 
 	#Movie class method that returns the actors in a list
 	def get_actors_list(self):
@@ -131,10 +131,10 @@ class Tweet():
 		return "{} is the tweet that says {} and was posted by {} because the movie {} was searched and has gotten {} favoroites and {} retweets".format(self.tweet_id, self.tweet_text, self.user_id, self.movie_search, self.num_favs, self.retweets)
 
 #list of the 5 hashtagged movies that are searched on Twitter
-Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan", "Colossal"]
+Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan", "#Colossal", "#Deadpool", "#FindingDory", "#TheLegoBatmanMovie", "#Zootopia", "#TheBFG", "#ManchesterbytheSea"]
 
 #list of the 5 movies that are searched for on the IMDB
-Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal"]
+Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal", "Deadpool", "Finding Dory", "The Lego Batman Movie", "Zootopia", "The BFG", "Manchester by the Sea"]
 
 # Invoking function get_movie_tweets on 5 hashtagged movies and then making a list of dictionaries of the data for each tweet
 Movie_tweets = []
@@ -168,12 +168,12 @@ cur.execute(table_spec)
 
 cur.execute('DROP TABLE IF EXISTS Users')
 table_spec = 'CREATE TABLE Users'
-table_spec += '(user_id TEXT PRIMARY KEY, screen_name TEXT, num_favs INTEGER)'
+table_spec += '(user_id TEXT PRIMARY KEY, screen_name TEXT, num_user_favs INTEGER)'
 cur.execute(table_spec)
 
 cur.execute('DROP TABLE IF EXISTS Movies')
 table_spec = 'CREATE TABLE Movies'
-table_spec += '(movie_id TEXT PRIMARY KEY, movie_title TEXT, movie_director TEXT, languages TEXT, IMDB_rating INTEGER, first_actor TEXT)'
+table_spec += '(movie_id TEXT PRIMARY KEY, movie_title TEXT, movie_director TEXT, languages TEXT, IMDB_rating INTEGER, first_actor TEXT, awards TEXT)'
 cur.execute(table_spec)
 
 #Load data into your database!
@@ -184,7 +184,7 @@ for s in Movie_tweet_instances:
 
 #iterate through the tweet instances and loads the data about each user into the database
 for s in Movie_tweet_instances :
-	cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs) VALUES (?, ?, ?)', (s.user_id, s.screenname, s.num_user_favs))
+	cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_user_favs) VALUES (?, ?, ?)', (s.user_id, s.screenname, s.num_user_favs))
 
 #iterate through the tweet instances and loads the data about each user mentioned into the database
 for s in Movie_tweet_instances:
@@ -198,24 +198,53 @@ for s in Movie_tweet_instances:
 			f = open(CACHE_FNAME, 'w')
 			f.write(json.dumps(CACHE_DICTION))
 			f.close()
-		cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_favs) VALUES (?, ?, ?)', (my_var["id_str"], my_var["screen_name"], my_var["favourites_count"]))
+		cur.execute('INSERT OR IGNORE INTO Users (user_id, screen_name, num_user_favs) VALUES (?, ?, ?)', (my_var["id_str"], my_var["screen_name"], my_var["favourites_count"]))
 
 #iterate through the movie instances and loads the data about each movie into the database
 for s in Movie_data_instances:
 	actors_list = s.get_actors_list()
-	cur.execute('INSERT OR IGNORE INTO Movies (movie_id, movie_title, movie_director, languages, IMDB_rating, first_actor) VALUES (?, ?, ?, ?, ?, ?)', (s.movie_id, s.movie_title, s.movie_director, s.languages, s.IMDB_rating, actors_list[0]))
+	cur.execute('INSERT OR IGNORE INTO Movies (movie_id, movie_title, movie_director, languages, IMDB_rating, first_actor, awards) VALUES (?, ?, ?, ?, ?, ?, ?)', (s.movie_id, s.movie_title, s.movie_director, s.languages, s.IMDB_rating, actors_list[0], s.awards))
 
 conn.commit()
 
-#4 types of processing mechanisms: set comprehension, list comprehension, dictionary comprehension, dictionary accumulation
+#4 types of processing mechanisms: set comprehension, list comprehension, dictionary comprehension, sorting
+# make a query to select all of the movies searched and screennames of the users in the tweets that were tweeted by users who have favorited more than 30,000 tweets.
 
-#make a query to select all of the screennames of the users who have favorited more than 30,000 tweets. 
+query = "SELECT Users.screen_name, Tweets.movie_search FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
+cur.execute(query)
+movie_screenname_tuple = cur.fetchall()
+movie_list = [i[1] for i in movie_screenname_tuple]
+screen_names = [i[0] for i in movie_screenname_tuple]
+print(movie_list)
+print(screen_names)
 
-#make a query to select the movie search from the Tweets associated with those users who favorites more than 30,000 tweets. 
+#make a query to select the awards of all of the movies
+query = "SELECT movie_title, awards FROM Movies"
+cur.execute(query)
+movie_info = cur.fetchall()
 
-#make a query to select the IMDB_rating from the Movies associated with those movies (movie_search = movie_title). 
+#make a dictionary where all of the movies are the keys and all of the award values are the values
+award_dict = {}
+for s in movie_info:
+	if s[1] == "N/A":
+		awards = 0
+	else:
+		temp_var = s[1].split(" win")
+		first = temp_var[0].split()
+		awards = int(first[-1])
+	award_dict[s[0]] = awards
 
-#print IMDB_ratings and movies and screennames to see the ratings of the movies that were tweeted by users with over 30,000 favorites.
+#create a list of awards for the specific movies in the movie_list (from the query)
+award_list = [award_dict[s] for s in movie_list]
+
+#zip together the lists into a list of tuples
+movie_tups = zip(screen_names, movie_list, award_list)
+movie_tups_list = list(movie_tups)
+print(movie_tups_list)
+
+sorted_list = sorted(movie_tups_list, key=lambda movie: movie[2], reverse = True)
+
+print(sorted_list)
 
 #TO CLOSE YOUR DATABASE CONNECTION 
 conn.close()
