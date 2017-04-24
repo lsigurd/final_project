@@ -131,10 +131,10 @@ class Tweet():
 		return "{} is the tweet that says {} and was posted by {} because the movie {} was searched and has gotten {} favoroites and {} retweets".format(self.tweet_id, self.tweet_text, self.user_id, self.movie_search, self.num_favs, self.retweets)
 
 #list of the 5 hashtagged movies that are searched on Twitter
-Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan", "#Colossal", "#Deadpool", "#FindingDory", "#TheLegoBatmanMovie", "#Zootopia", "#TheBFG", "#ManchesterbytheSea"]
+Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan", "#Colossal", "#Deadpool", "#TheLegoBatmanMovie", "#Zootopia"]
 
 #list of the 5 movies that are searched for on the IMDB
-Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal", "Deadpool", "Finding Dory", "The Lego Batman Movie", "Zootopia", "The BFG", "Manchester by the Sea"]
+Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal", "Deadpool", "The Lego Batman Movie", "Zootopia"]
 
 # Invoking function get_movie_tweets on 5 hashtagged movies and then making a list of dictionaries of the data for each tweet
 Movie_tweets = []
@@ -215,13 +215,24 @@ cur.execute(query)
 movie_screenname_tuple = cur.fetchall()
 movie_list = [i[1] for i in movie_screenname_tuple]
 screen_names = [i[0] for i in movie_screenname_tuple]
-print(movie_list)
-print(screen_names)
+
+#make query to get the texts of all of the tweets that were tweeted by users who have favorited more than 30,000 times
+query = "SELECT Tweets.tweet_text FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
+cur.execute(query)
+tweet_text_tuple = cur.fetchall()
+tweet_text_list = [i[0] for i in tweet_text_tuple]
+
+
+query = "SELECT * FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
+cur.execute(query)
+tweet_data_tuple = cur.fetchall()
+# print(tweet_data_tuple)
 
 #make a query to select the awards of all of the movies
 query = "SELECT movie_title, awards FROM Movies"
 cur.execute(query)
 movie_info = cur.fetchall()
+
 
 #make a dictionary where all of the movies are the keys and all of the award values are the values
 award_dict = {}
@@ -233,23 +244,51 @@ for s in movie_info:
 		first = temp_var[0].split()
 		awards = int(first[-1])
 	award_dict[s[0]] = awards
+# print(award_dict)
+
+retweeted_movies = {}
+for s in tweet_data_tuple:
+	if s[3] not in retweeted_movies:
+		retweeted_movies[s[3]] = s[5]
+	else:
+		retweeted_movies[s[3]] += s[5]
+print(retweeted_movies)
+
 
 #create a list of awards for the specific movies in the movie_list (from the query)
 award_list = [award_dict[s] for s in movie_list]
 
 #zip together the lists into a list of tuples
-movie_tups = zip(screen_names, movie_list, award_list)
+movie_tups = zip(screen_names, tweet_text_list, movie_list, award_list)
 movie_tups_list = list(movie_tups)
-print(movie_tups_list)
+# print(movie_tups_list)
 
-sorted_list = sorted(movie_tups_list, key=lambda movie: movie[2], reverse = True)
+#sort the list based on the number of awards that the movie won (from highest to lowest)
+sorted_list = sorted(movie_tups_list, key=lambda movie: movie[3], reverse = True)
 
 file = open("statistics_final_project.txt", "w")
 
+file.write("\nTWITTER AND MOVIE STATISTICS\n")
+
+file.write("\nDescription of statistics: This summary page gives the information on the movies that were tweeted by users who have favorited more than 30,000 times. This means that the user is very active on Twitter and might have a good oppinion on what movie to tweet about. This page also gives the number of wins that each movie got to see if that movie was actually worth tweeting about. At the bottom of the page, the total number of retweets for each movie that was tweeted (by these users who have favorited more than 30,000 times) was printed. \n")
+
+file.write("\n The movies being searched are : La La Land, Beauty and the Beast , The Lost City of Z , Logan , Colossal, Deadpool, The Lego Batman Movie, Zootopia \n \n")
+
 for s in sorted_list:
-	file.write("\nscreen_name: " +s[0])
-	file.write("\nmovie: " +s[1])
-	file.write("\nnumber of wins: " + str(s[2]))
+	file.write("\nScreenname:  " +s[0])
+	file.write("\nTweet Text:  " +s[1])
+	file.write("\nMovie:  " +s[2])
+	file.write("\nNumber of wins:  " + str(s[3]))
+
+	for x in Movie_data_instances:
+		if x.movie_title == s[2]:
+			file.write("\nMovie description:  " + x.__str__())
+	file.write("\n")
+
+
+file.write("\nWhere users had greater than 30,000 favorites, the total retweets for all of the tweeted movies were:\n")
+for key in retweeted_movies.keys():
+	file.write("	" + key + ": " + str(retweeted_movies[key]))
 	file.write("\n")
 
 
