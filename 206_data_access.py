@@ -244,11 +244,19 @@ print(movie_tups_list)
 
 sorted_list = sorted(movie_tups_list, key=lambda movie: movie[2], reverse = True)
 
-print(sorted_list)
+file = open("statistics_final_project.txt", "w")
+
+for s in sorted_list:
+	file.write("\nscreen_name: " +s[0])
+	file.write("\nmovie: " +s[1])
+	file.write("\nnumber of wins: " + str(s[2]))
+	file.write("\n")
+
 
 #TO CLOSE YOUR DATABASE CONNECTION 
 conn.close()
 
+file.close()
 #Process the data and create an output file!
 
 # Put your tests here, with any edits you now need from when you turned them in with your project plan.
