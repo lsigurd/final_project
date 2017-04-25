@@ -207,9 +207,9 @@ for s in Movie_data_instances:
 
 conn.commit()
 
-#4 types of processing mechanisms: set comprehension, list comprehension, dictionary comprehension, sorting
-# make a query to select all of the movies searched and screennames of the users in the tweets that were tweeted by users who have favorited more than 30,000 tweets.
+#4 types of processing mechanisms: set comprehension, list comprehension, dictionary accumulation, sorting
 
+# make a query to select all of the movies searched and screennames of the users in the tweets that were tweeted by users who have favorited more than 30,000 tweets.
 query = "SELECT Users.screen_name, Tweets.movie_search FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
 cur.execute(query)
 movie_screenname_tuple = cur.fetchall()
@@ -222,17 +222,10 @@ cur.execute(query)
 tweet_text_tuple = cur.fetchall()
 tweet_text_list = [i[0] for i in tweet_text_tuple]
 
-
-query = "SELECT * FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
-cur.execute(query)
-tweet_data_tuple = cur.fetchall()
-# print(tweet_data_tuple)
-
 #make a query to select the awards of all of the movies
 query = "SELECT movie_title, awards FROM Movies"
 cur.execute(query)
 movie_info = cur.fetchall()
-
 
 #make a dictionary where all of the movies are the keys and all of the award values are the values
 award_dict = {}
@@ -246,15 +239,6 @@ for s in movie_info:
 	award_dict[s[0]] = awards
 # print(award_dict)
 
-retweeted_movies = {}
-for s in tweet_data_tuple:
-	if s[3] not in retweeted_movies:
-		retweeted_movies[s[3]] = s[5]
-	else:
-		retweeted_movies[s[3]] += s[5]
-print(retweeted_movies)
-
-
 #create a list of awards for the specific movies in the movie_list (from the query)
 award_list = [award_dict[s] for s in movie_list]
 
@@ -266,13 +250,32 @@ movie_tups_list = list(movie_tups)
 #sort the list based on the number of awards that the movie won (from highest to lowest)
 sorted_list = sorted(movie_tups_list, key=lambda movie: movie[3], reverse = True)
 
+#user counter to get the most common movie in the list of movies that were tweeted by users who favorited more than 30,000 times
+movie_counter = collections.Counter(movie_list).most_common(1)
+most_common_movie = movie_counter[0]
+print(most_common_movie)
+
+#make a query to get a list of tuples of data about each tweet that the users who have favorited more than 30,000 times have made
+query = "SELECT * FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
+cur.execute(query)
+tweet_data_tuple = cur.fetchall()
+# print(tweet_data_tuple)
+
+#make a dictionary where all of the movies that the users (with more than 30,000 favorites) tweeted about are the keys and the total number of retweets all the movies got are the values. 
+retweeted_movies = {}
+for s in tweet_data_tuple:
+	if s[3] not in retweeted_movies:
+		retweeted_movies[s[3]] = s[5]
+	else:
+		retweeted_movies[s[3]] += s[5]
+
 file = open("statistics_final_project.txt", "w")
 
 file.write("\nTWITTER AND MOVIE STATISTICS\n")
 
 file.write("\nDescription of statistics: This summary page gives the information on the movies that were tweeted by users who have favorited more than 30,000 times. This means that the user is very active on Twitter and might have a good oppinion on what movie to tweet about. This page also gives the number of wins that each movie got to see if that movie was actually worth tweeting about. At the bottom of the page, the total number of retweets for each movie that was tweeted (by these users who have favorited more than 30,000 times) was printed. \n")
 
-file.write("\n The movies being searched are : La La Land, Beauty and the Beast , The Lost City of Z , Logan , Colossal, Deadpool, The Lego Batman Movie, Zootopia \n \n")
+file.write("\n List of movies searched on Twitter : La La Land, Beauty and the Beast , The Lost City of Z , Logan , Colossal, Deadpool, The Lego Batman Movie, Zootopia \n \n")
 
 for s in sorted_list:
 	file.write("\nScreenname:  " +s[0])
@@ -285,6 +288,8 @@ for s in sorted_list:
 			file.write("\nMovie description:  " + x.__str__())
 	file.write("\n")
 
+
+file.write("\nMost Common Movie: " + most_common_movie[0] + ", tweeted " + str(most_common_movie[1]) + " times\n")
 
 file.write("\nWhere users had greater than 30,000 favorites, the total retweets for all of the tweeted movies were:\n")
 for key in retweeted_movies.keys():
