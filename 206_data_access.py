@@ -28,7 +28,7 @@ import unittest
 import itertools
 import collections
 import tweepy
-import twitter_info # same deal as always...
+import twitter_info
 import json
 import sqlite3
 
@@ -130,29 +130,29 @@ class Tweet():
 	def __str__(self):
 		return "{} is the tweet that says {} and was posted by {} because the movie {} was searched and has gotten {} favoroites and {} retweets".format(self.tweet_id, self.tweet_text, self.user_id, self.movie_search, self.num_favs, self.retweets)
 
-#list of the 5 hashtagged movies that are searched on Twitter
+#list of the 8 hashtagged movies that are searched on Twitter
 Tweeted_movies = ["#LaLaLand", "#BeautyandtheBeast", "#TheLostCityofZ", "#Logan", "#Colossal", "#Deadpool", "#TheLegoBatmanMovie", "#Zootopia"]
 
-#list of the 5 movies that are searched for on the IMDB
+#list of the 8 movies that are searched for on the IMDB
 Movie_list = ["La La Land", "Beauty and the Beast" , "The Lost City of Z" , "Logan" , "Colossal", "Deadpool", "The Lego Batman Movie", "Zootopia"]
 
-# Invoking function get_movie_tweets on 5 hashtagged movies and then making a list of dictionaries of the data for each tweet
+# Invoking function get_movie_tweets on 8 hashtagged movies and then making a list of dictionaries of the data for each tweet
 Movie_tweets = []
 for s in Tweeted_movies: 
 	Movie_tweets.append(get_movie_tweets(s))
 
-# Make a list of tweet instances for the 5 tweeted movies
+# Make a list of tweet instances for the 8 tweeted movies
 Movie_tweet_instances = []
 for i in range(len(Movie_tweets)):
 	for s in Movie_tweets[i]:
 		Movie_tweet_instances.append(Tweet(s, Movie_list[i]))
 
-# Invoking function get_OMDB_data on 5 movies and then making a list of dictionaries of the data for each movie
+# Invoking function get_OMDB_data on 8 movies and then making a list of dictionaries of the data for each movie
 Movie_data = []
 for s in Movie_list:
 	Movie_data.append(get_OMDB_API_data(s))
 
-# Make a list of movie instances for the 5 movies
+# Make a list of movie instances for the 8 movies
 Movie_data_instances = []
 for s in Movie_data:
 	Movie_data_instances.append(Movie(s))
@@ -237,31 +237,27 @@ for s in movie_info:
 		first = temp_var[0].split()
 		awards = int(first[-1])
 	award_dict[s[0]] = awards
-# print(award_dict)
 
 #create a list of awards for the specific movies in the movie_list (from the query)
 award_list = [award_dict[s] for s in movie_list]
 
-#zip together the lists into a list of tuples
+#zip together the lists of screennames, tweet texts, movies, and number of wins into a list of tuples
 movie_tups = zip(screen_names, tweet_text_list, movie_list, award_list)
 movie_tups_list = list(movie_tups)
-# print(movie_tups_list)
 
 #sort the list based on the number of awards that the movie won (from highest to lowest)
 sorted_list = sorted(movie_tups_list, key=lambda movie: movie[3], reverse = True)
-
-#user counter to get the most common movie in the list of movies that were tweeted by users who favorited more than 30,000 times
+print(sorted_list[0])
+#use counter to get the most common movie in the list of movies that were tweeted by users who favorited more than 30,000 times
 movie_counter = collections.Counter(movie_list).most_common(1)
 most_common_movie = movie_counter[0]
-print(most_common_movie)
 
 #make a query to get a list of tuples of data about each tweet that the users who have favorited more than 30,000 times have made
 query = "SELECT * FROM Tweets INNER JOIN Users ON instr(Tweets.user_id, Users.user_id) WHERE Users.num_user_favs > 30000"
 cur.execute(query)
 tweet_data_tuple = cur.fetchall()
-# print(tweet_data_tuple)
 
-#make a dictionary where all of the movies that the users (with more than 30,000 favorites) tweeted about are the keys and the total number of retweets all the movies got are the values. 
+#make a dictionary where all of the movies (that the users with more than 30,000 favorites tweeted about) are the keys and the total number of retweets all the movies got are the values. 
 retweeted_movies = {}
 for s in tweet_data_tuple:
 	if s[3] not in retweeted_movies:
@@ -269,11 +265,11 @@ for s in tweet_data_tuple:
 	else:
 		retweeted_movies[s[3]] += s[5]
 
-file = open("statistics_final_project.txt", "w")
+file = open("Tweeted_movies_statistics.txt", "w")
 
 file.write("\nTWITTER AND MOVIE STATISTICS\n")
 
-file.write("\nDescription of statistics: This summary page gives the information on the movies that were tweeted by users who have favorited more than 30,000 times. This means that the user is very active on Twitter and might have a good oppinion on what movie to tweet about. This page also gives the number of wins that each movie got to see if that movie was actually worth tweeting about. At the bottom of the page, the total number of retweets for each movie that was tweeted (by these users who have favorited more than 30,000 times) was printed. \n")
+file.write("\nDescription of statistics: This summary page gives the information on the movies that were tweeted by users who have favorited more than 30,000 times. This means that the user is very active on Twitter and might have a good oppinion on what movie to tweet about. This page also gives the number of wins that each movie got to see if that movie was actually worth tweeting about. It also gives the movie that was the most common and how many times it was tweeted by these active Twitter users. At the bottom of the page, the total number of retweets for each movie that was tweeted (by these users who have favorited more than 30,000 times) was printed. \n")
 
 file.write("\n List of movies searched on Twitter : La La Land, Beauty and the Beast , The Lost City of Z , Logan , Colossal, Deadpool, The Lego Batman Movie, Zootopia \n \n")
 
